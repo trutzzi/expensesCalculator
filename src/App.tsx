@@ -167,9 +167,9 @@ function App() {
       return <Chip
         key={'chip__' + index}
         style={{ marginRight: 5, marginBottom: 10 }}
-        disabled={false}
         color={isActive ? undefined : 'primary'}
         onClick={() => handleAddTagToMerchant(id, tag)}
+        disabled={!!selectedTags.length && isActive}
         variant={isActive ? 'outlined' : 'filled'}
         label={tag}
       />
