@@ -82,7 +82,6 @@ function App() {
       }
     })
     setGrupByTags(grupByLabesl)
-    // setGrupByLabels()
   }, [grupedByMerchant, tags])
 
   const handleAddTag = () => {
@@ -189,6 +188,7 @@ function App() {
 
   useEffect(() => {
     grupForCharts()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grupedByTags])
 
   useEffect(() => {
