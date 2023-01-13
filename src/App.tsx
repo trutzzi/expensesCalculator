@@ -125,6 +125,7 @@ function App() {
         <Card key={'card__' + grupedByMerchant[merchant].id} variant="elevation" style={{ padding: 10 }}>
           <CardContent>
             <Stack>
+              <Typography variant='subtitle2'>This is a beta version</Typography>
               <Typography variant='h6'>
                 {grupedByMerchant[merchant].rows[0].terminal.replace('Terminal: ', '')}
               </Typography>
@@ -204,7 +205,7 @@ function App() {
 
   useEffect(() => {
     calculateTotalPerTag()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grupedByTags])
 
   useEffect(() => {
