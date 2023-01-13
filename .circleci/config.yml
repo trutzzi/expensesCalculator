@@ -1,67 +1,26 @@
-version: 2.1
-orbs:
-  node: circleci/node@4.7.0
-  heroku: circleci/heroku@1.2.6
-
+version: 2
 jobs:
-  build_and_test:
-    docker:
-      - image: cimg/node:17.2.0
-    steps:
-      - checkout
-      - node/install-packages:
-          pkg-manager: npm
-      # - run:
-      #     command: npm test
-      #     name: Run tests
-      - run:
-          command: npm run build
-          name: Build app
-      - persist_to_workspace:
-          root: ~/project
-          paths:
-            - .
-  deploy: # this can be any name you choose
-    docker:
-      - image: cimg/node:17.2.0
-    steps:
-      - run:
-          name: Deploy
-          command: |
-            if [ "$CIRCLE_BRANCH" = "develop" ]; then
-              npm run firebase use expensesapp95
-              npm run firebase deploy --token=$FIREBASE_DEPLOY_TOKEN
-            fi
-
-workflows:
-  on_commit:
-    jobs:
-      - build_and_test
-      # Follow instructions here to authenticate git for Heroku: https://devcenter.heroku.com/articles/git#http-git-authentication
-      # The following code may be uncommented, onnce HEROKU_API_KEY & HEROKU_APP_NAME environemnt variables are present
-      # Read more: https://circleci.com/docs/2.0/env-vars/
-      - deploy:
-          requires:
-            - build_and_test # only deploy if the build_and_test job has completed
-          filters:
-            branches:
-              only: develop # only deploy when on main/develop
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 0 * * *"
-          filters:
-            branches:
-              only:
-                - develop
-    jobs:
-      - build_and_test
-      # Follow instructions here to authenticate git for Heroku: https://devcenter.heroku.com/articles/git#http-git-authentication
-      # The following code may be uncommented, onnce HEROKU_API_KEY & HEROKU_APP_NAME environemnt variables are present
-      # Read more: https://circleci.com/docs/2.0/env-vars/
-      - deploy:
-          requires:
-            - build_and_test # only deploy if the build_and_test job has completed
-          filters:
-            branches:
-              only: master # only deploy when on main/master
+    build:
+        docker:
+            - image: cimg/node:17.2.0
+        working_directory: ~/repo
+        steps:
+            - checkout
+            # Download and cache dependencies
+            - restore_cache:
+                  keys:
+                      - v1-dependencies-{{ checksum "package.json" }}
+                      - v1-dependencies-
+            - run:
+                  name: Install Dependencies
+                  command: npm install
+            - save_cache:
+                  key: v1-npm-deps-{{ checksum "package-lock.json" }}
+                  paths:
+                      - ./node_modules
+            - run:
+                  name: Build
+                  command: npm build
+            - run:
+                  name: Firebase Deploy
+                  command: ./node_modules/.bin/firebase deploy --token "$FIREBASE_DEPLOY_TOKEN" --only hosting
