@@ -7,7 +7,6 @@ import Chip from '@mui/material/Chip';
 import Button from '@mui/material/Button';
 import { CSVFormat, GrupedAndProcessed, GrupedByMerchant } from './types';
 import PieComponent from './Pie';
-import { ChartData } from 'chart.js';
 
 function App() {
   const [daat, setData] = useState<CSVFormat[]>([]);
@@ -73,7 +72,7 @@ function App() {
 
   useEffect(() => {
     let grupByLabesl: any = [];
-    tags.map(tag => {
+    tags.forEach(tag => {
       for (let merchant in grupedByMerchant) {
         if (grupedByMerchant[merchant].tag.indexOf(tag) !== -1) {
           grupByLabesl.push(grupedByMerchant[merchant]);
@@ -118,6 +117,7 @@ function App() {
     let comp = [];
     let totalExpenses = 0;
     for (let merchant in grupedByMerchant) {
+      // eslint-disable-next-line no-loop-func
       grupedByMerchant[merchant].rows.forEach((item: GrupedAndProcessed) => {
         totalExpenses = totalExpenses += parseFloat(item.valoare)
       });
@@ -178,19 +178,19 @@ function App() {
   const calculateTotalPerTag = () => {
     let grupByTag: any = [];
 
-    tags.map(tag => {
+    tags.forEach(tag => {
       grupByTag.push({
         tag,
         total: 0
       });
     });
 
-    tags.map(tag => {
+    tags.forEach(tag => {
 
-      grupedByTags.map((merchant: any) => {
+      grupedByTags.forEach((merchant: any) => {
 
         if (merchant.tag.indexOf(tag) !== -1) {
-          grupByTag.map((item: any) => {
+          grupByTag.forEach((item: any) => {
             if (item.tag.indexOf(tag) !== -1) {
               item.total += merchant.total
             }
@@ -204,6 +204,7 @@ function App() {
 
   useEffect(() => {
     calculateTotalPerTag()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grupedByTags])
 
   useEffect(() => {
