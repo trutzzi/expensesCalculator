@@ -15,7 +15,7 @@ jobs:
       #     command: npm test
       #     name: Run tests
       - run:
-          command: npm build
+          command: npm run build
           name: Build app
       - persist_to_workspace:
           root: ~/project
@@ -42,7 +42,7 @@ workflows:
             - build_and_test # only deploy if the build_and_test job has completed
           filters:
             branches:
-              only: master # only deploy when on main/master
+              only: develop # only deploy when on main/develop
   nightly:
     triggers:
       - schedule:
@@ -56,9 +56,9 @@ workflows:
       # Follow instructions here to authenticate git for Heroku: https://devcenter.heroku.com/articles/git#http-git-authentication
       # The following code may be uncommented, onnce HEROKU_API_KEY & HEROKU_APP_NAME environemnt variables are present
       # Read more: https://circleci.com/docs/2.0/env-vars/
-      # - deploy:
-      #     requires:
-      #       - build_and_test # only deploy if the build_and_test job has completed
-      #     filters:
-      #       branches:
-      #         only: master # only deploy when on main/master
+      - deploy:
+          requires:
+            - build_and_test # only deploy if the build_and_test job has completed
+          filters:
+            branches:
+              only: master # only deploy when on main/master
