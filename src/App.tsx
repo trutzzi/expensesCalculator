@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import { read, utils } from 'xlsx';
-import { Box, Card, CardActions, CardContent, Container, CssBaseline, Grid, Input, Stack, Typography } from '@mui/material';
-import Chip from '@mui/material/Chip';
+import { Box, Container, CssBaseline, Grid, Stack, TextField, Typography } from '@mui/material';
 
 import Button from '@mui/material/Button';
 import { CSVFormat, GrupedAndProcessed, GrupedByMerchant } from './types';
 import PieComponent from './Pie';
+import FileImport from './components/FileImport';
+import Transactions from './components/Transaction';
+import Header from './Header';
 
 function App() {
-  const [daat, setData] = useState<CSVFormat[]>([]);
+  const [dataCsv, setDataCsv] = useState<CSVFormat[]>([]);
   const [grupedData, setGrupedData] = useState<GrupedAndProcessed[]>([])
   const [newTag, setNewTag] = useState('');
-  const [tags, setTags] = useState<string[]>(['altele']);
+  const [tags, setTags] = useState<string[]>(['others']);
 
   const [grupedByMerchant, setGrupByMercahng] = useState<GrupedByMerchant>({})
   const [grupedByTags, setGrupByTags] = useState<any>([])
@@ -23,17 +25,17 @@ function App() {
 
     let groupedValues: GrupedAndProcessed[] = [];
 
-    for (let i = 0; i < daat.length; i++) {
+    for (let i = 0; i < dataCsv.length; i++) {
       let constructObj = { id: 0, dataCumparare: '', tip: '', valoare: '0', terminal: '' };
 
       // Check type
-      if (daat[i]?.B && daat[i]?.H && daat[i]?.Q) {
+      if (dataCsv[i]?.B && dataCsv[i]?.H && dataCsv[i]?.Q) {
         constructObj = {
           id: i,
-          dataCumparare: daat[i].B || '',
-          tip: daat[i].H || '',
-          valoare: daat[i].Q || '',
-          terminal: daat[i + 2].H || ''
+          dataCumparare: dataCsv[i].B || '',
+          tip: dataCsv[i].H || '',
+          valoare: dataCsv[i].Q || '',
+          terminal: dataCsv[i + 2].H || ''
         }
 
         groupedValues.push(constructObj);
@@ -42,7 +44,7 @@ function App() {
 
     }
 
-  }, [daat]);
+  }, [dataCsv]);
 
   useEffect(() => {
 
@@ -51,9 +53,9 @@ function App() {
       grupedData.forEach((row: GrupedAndProcessed, index: number) => {
         if (grupedDataArray[row.terminal]) {
           let newRows = grupedDataArray[row.terminal].rows;
-          grupedDataArray = { ...grupedDataArray, [row.terminal]: { rows: [...newRows, row], id: index, tag: ['altele'], total: 0 } }
+          grupedDataArray = { ...grupedDataArray, [row.terminal]: { rows: [...newRows, row], id: index, tag: ['others'], total: 0 } }
         } else {
-          grupedDataArray = { ...grupedDataArray, [row.terminal]: { rows: [row], id: index, tag: ['altele'], total: 0 } }
+          grupedDataArray = { ...grupedDataArray, [row.terminal]: { rows: [row], id: index, tag: ['others'], total: 0 } }
         }
 
         //Make total if rows was created and sorted
@@ -86,7 +88,10 @@ function App() {
   const handleAddTag = () => {
     if (newTag.trim().length >= 3) {
       if (tags.indexOf(newTag) === -1) {
-        setTags([...tags, newTag]);
+
+        let newArray = newTag.split(',')
+
+        setTags([...tags, ...newArray]);
       } else {
         alert('Un TAG cu acelasi nume a fost deja salvat.')
       }
@@ -106,7 +111,7 @@ function App() {
 
         if (sheets.length) {
           const rows = utils.sheet_to_json(wb.Sheets[sheets[0]], { header: 'A' }) as CSVFormat[];
-          setData(rows)
+          setDataCsv(rows)
         }
       }
       reader.readAsArrayBuffer(file);
@@ -114,36 +119,26 @@ function App() {
   }
 
   const renderMerchant = () => {
-    let comp = [];
+    let renderTransactions = [];
     let totalExpenses = 0;
     for (let merchant in grupedByMerchant) {
       // eslint-disable-next-line no-loop-func
       grupedByMerchant[merchant].rows.forEach((item: GrupedAndProcessed) => {
         totalExpenses = totalExpenses += parseFloat(item.valoare)
       });
-      comp.push(
-        <Card key={'card__' + grupedByMerchant[merchant].id} variant="elevation" style={{ padding: 10 }}>
-          <CardContent>
-            <Stack>
-              <Typography variant='subtitle2'>This is a beta version</Typography>
-              <Typography variant='h6'>
-                {grupedByMerchant[merchant].rows[0].terminal.replace('Terminal: ', '')}
-              </Typography>
-              <Typography variant='subtitle1' color={'green'}>{grupedByMerchant[merchant].total} RON</Typography>
-              <Typography variant='overline'>{grupedByMerchant[merchant].rows.length} Tranzactii  </Typography>
-            </Stack>
-          </CardContent>
-          <CardActions>
-            <Grid>
-              {renderAddTags(grupedByMerchant[merchant].id, grupedByMerchant[merchant].tag)}
-            </Grid>
-          </CardActions>
-        </Card >
-      )
+
+      let propsData = {
+        id: grupedByMerchant[merchant].id,
+        title: grupedByMerchant[merchant].rows[0].terminal.replace('Terminal: ', ''),
+        total: grupedByMerchant[merchant].total || 0,
+        transactions: grupedByMerchant[merchant].rows.length
+      }
+
+      renderTransactions.push(<Transactions tags={tags} merchant={grupedByMerchant[merchant]} data={propsData} handleAddTagToMerchant={handleAddTagToMerchant} />)
     }
     return <>
-      {Object.keys(grupedByMerchant).length > 0 && <Typography variant='h4'>Total Cheltueli <span style={{ color: 'green' }}>{totalExpenses}</span> RON</Typography>}
-      {comp}
+      {Object.keys(grupedByMerchant).length > 0 && <Typography variant='h5'>Expenses <span style={{ color: 'green' }}>{totalExpenses}</span> RON</Typography>}
+      {renderTransactions}
     </>
   };
 
@@ -162,22 +157,11 @@ function App() {
     }
   }
 
-  const renderAddTags = (id: number, selectedTags: string[]) => {
-    return tags.map((tag: string, index: number) => {
-      const isActive = selectedTags.indexOf(tag) === -1;
-      return <Chip
-        key={'chip__' + index}
-        style={{ marginRight: 5, marginBottom: 10 }}
-        color={isActive ? undefined : 'primary'}
-        onClick={() => handleAddTagToMerchant(id, tag)}
-        disabled={!!selectedTags.length && isActive}
-        variant={isActive ? 'outlined' : 'filled'}
-        label={tag}
-      />
-    })
-  };
-  const calculateTotalPerTag = () => {
-    let grupByTag: any = [];
+  const grupForCharts = () => {
+    let grupByTag: {
+      tag: string,
+      total: number
+    }[] = [];
 
     tags.forEach(tag => {
       grupByTag.push({
@@ -204,8 +188,7 @@ function App() {
   }
 
   useEffect(() => {
-    calculateTotalPerTag()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    grupForCharts()
   }, [grupedByTags])
 
   useEffect(() => {
@@ -241,35 +224,43 @@ function App() {
   return (
     <Box sx={{ width: '100%' }}>
       <CssBaseline />
-      <Container maxWidth="sm">
+      <Container style={{ marginTop: 100 }} >
         <Stack spacing={2}>
-          <Grid container spacing={2}>
-            <Grid item xs={10}>
-              <Input style={{ width: '100%' }} placeholder="Adauga o eticheta ..." onChange={e => setNewTag(e.target.value)} />
+          <Header >
+            <Grid style={{ justifyContent: 'center' }} container spacing={2}>
+              <Grid item xs={8}>
+                <TextField variant='standard' fullWidth placeholder=" You can write multiple tags and  separate them by ',' " onChange={e => setNewTag(e.target.value)} />
+              </Grid>
+              <Grid item xs={2}>
+                <Button fullWidth variant='text' color='inherit' onClick={handleAddTag}>New Tag</Button>
+              </Grid>
+              <Grid item xs={2}>
+                <FileImport onChange={handleImport} />
+              </Grid>
             </Grid>
-            <Grid item xs={2}>
-              <Button variant='contained' onClick={handleAddTag}>Add</Button>
+          </Header>
+          <Typography variant='h4'>What is this?</Typography>
+          <Typography variant='body2'>This is a simple program to process and tag your expenses. Download your .xls file from the bank and upload it here.
+          </Typography>
+          <ol>
+            <li>Create tags (You can put them in series: <small>test1, test2, test3</small> for bulk creating)</li>
+            <li>Attach tags to transactions </li>
+            <li>See where you spend your money on the chart</li>
+          </ol>
+          <Typography variant='caption'>This app doesn't store any information about your transactions or any legal information</Typography>
+
+          <Grid container spacing={2}>
+            <Grid item xs={8}>
+              {renderMerchant()}
+            </Grid>
+            <Grid item xs={4}>
+              {DataForPie && <PieComponent data={DataForPie} />}
             </Grid>
           </Grid>
-          <Button variant="contained" component="label">
-            Select file
-            <input hidden accept="xls/*" multiple type="file" onChange={handleImport} />
-          </Button>
-          {renderMerchant()}
         </Stack>
-        {DataForPie && <PieComponent data={DataForPie} />}
       </Container>
     </Box >
   );
 }
 
 export default App;
-
-
-/**
- * TODO: 
- * 1. Realizarea unui chart pentru expenses per merchant
- * 2. Redesign la applicatie
- * 3. De verificat totalul - nu se calculeaza bine
- * 4. De gasit o solutie sa scada automat contul de economii 
- */
