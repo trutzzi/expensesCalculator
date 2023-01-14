@@ -4,7 +4,7 @@ import Tag from "./Tag";
 
 type TransactionPops = {
     merchant: any,
-    tags: string[],
+    tags: any[],
     handleAddTagToMerchant: Function,
     data: {
         id: number,
@@ -16,9 +16,9 @@ type TransactionPops = {
 
 export default function Transactions({ data, merchant, tags, handleAddTagToMerchant }: TransactionPops) {
     const renderAddTags = (id: number, selectedTags: string[]) => {
-        return tags.map((tag: string, index: number) => {
-            const isActive = selectedTags.indexOf(tag) === -1;
-            return <Tag id={id} onClick={() => handleAddTagToMerchant(data.id, tag)} isActive={isActive} tag={tag} selectedTags={selectedTags} />
+        return tags.map((tag, index: number) => {
+            const isActive = selectedTags.indexOf(tag?.name) === -1;
+            return <Tag id={id} onClick={() => handleAddTagToMerchant(data.id, tag?.name)} isActive={isActive} tag={tag?.name} selectedTags={selectedTags} />
         })
     };
 

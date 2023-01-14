@@ -9,12 +9,13 @@ import PieComponent from './Pie';
 import FileImport from './components/FileImport';
 import Transactions from './components/Transaction';
 import Header from './Header';
+import DefaultTags from './DefaultTags';
 
 function App() {
   const [dataCsv, setDataCsv] = useState<CSVFormat[]>([]);
   const [grupedData, setGrupedData] = useState<GrupedAndProcessed[]>([])
   const [newTag, setNewTag] = useState('');
-  const [tags, setTags] = useState<string[]>(['others']);
+  const [tags, setTags] = useState(DefaultTags);
 
   const [grupedByMerchant, setGrupByMercahng] = useState<GrupedByMerchant>({})
   const [grupedByTags, setGrupByTags] = useState<any>([])
@@ -53,9 +54,9 @@ function App() {
       grupedData.forEach((row: GrupedAndProcessed, index: number) => {
         if (grupedDataArray[row.terminal]) {
           let newRows = grupedDataArray[row.terminal].rows;
-          grupedDataArray = { ...grupedDataArray, [row.terminal]: { rows: [...newRows, row], id: index, tag: ['others'], total: 0 } }
+          grupedDataArray = { ...grupedDataArray, [row.terminal]: { rows: [...newRows, row], id: index, tag: ['General'], total: 0 } }
         } else {
-          grupedDataArray = { ...grupedDataArray, [row.terminal]: { rows: [row], id: index, tag: ['others'], total: 0 } }
+          grupedDataArray = { ...grupedDataArray, [row.terminal]: { rows: [row], id: index, tag: ['General'], total: 0 } }
         }
 
         //Make total if rows was created and sorted
@@ -76,7 +77,7 @@ function App() {
     let grupByLabesl: any = [];
     tags.forEach(tag => {
       for (let merchant in grupedByMerchant) {
-        if (grupedByMerchant[merchant].tag.indexOf(tag) !== -1) {
+        if (grupedByMerchant[merchant].tag.indexOf(tag.name) !== -1) {
           grupByLabesl.push(grupedByMerchant[merchant]);
         }
       }
@@ -86,11 +87,8 @@ function App() {
 
   const handleAddTag = () => {
     if (newTag.trim().length >= 3) {
-      if (tags.indexOf(newTag) === -1) {
-
-        let newArray = newTag.split(',')
-
-        setTags([...tags, ...newArray]);
+      if (tags.find(item => item.name === newTag)) {
+        setTags([...tags, { name: newTag, filters: [] }]);
       } else {
         alert('Un TAG cu acelasi nume a fost deja salvat.')
       }
@@ -162,9 +160,9 @@ function App() {
       total: number
     }[] = [];
 
-    tags.forEach(tag => {
+    tags.forEach(({ name }) => {
       grupByTag.push({
-        tag,
+        tag: name,
         total: 0
       });
     });
@@ -173,23 +171,47 @@ function App() {
 
       grupedByTags.forEach((merchant: any) => {
 
-        if (merchant.tag.indexOf(tag) !== -1) {
+        if (merchant.tag.indexOf(tag.name) !== -1) {
           grupByTag.forEach((item: any) => {
-            if (item.tag.indexOf(tag) !== -1) {
+            if (item.tag.indexOf(tag.name) !== -1) {
               item.total += merchant.total
             }
           })
         }
       })
     })
-    console.log('final', grupByTag)
     setDataCompare(grupByTag);
+  }
+
+  const autoTagging = () => {
+    
+    let newGrupedByTags = [...grupedByTags];
+
+    newGrupedByTags.forEach((merchant: any) => {
+      tags.forEach(tag => {
+        if (merchant.rows[0].terminal.search(tag) !== -1) {
+          tag.filters.forEach(tagSearch => {
+            // Find a way to search with regex for matching the whole world 
+            if (merchant.rows[0].terminal.toLocaleUpperCase().search(tagSearch.toLocaleUpperCase()) !== -1) {
+              //Remove general tag from array when autosort
+              let fromArray = merchant.tag.indexOf('General')
+              merchant.tag.splice(fromArray, fromArray + 1)
+              merchant.tag.push(tag.name)
+            }
+          })
+        }
+      })
+    })
+    setGrupByTags(newGrupedByTags)
   }
 
   useEffect(() => {
     grupForCharts()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grupedByTags])
+
+  useEffect(() => {
+  }, [dataCsv])
 
   useEffect(() => {
     setDataForPie({
@@ -239,8 +261,9 @@ function App() {
               </Grid>
             </Grid>
           </Header>
+          {dataCsv.length ? <Button variant='contained' onClick={() => autoTagging()}>Autosort</Button> : ''}
           <Typography variant='h4'>What is this?</Typography>
-          <Typography variant='body2'>This is a simple program to process and tag your expenses. Download your .xls file from the bank and upload it here.
+          <Typography variant='body2'>This is a simple p**rogram to process and tag your expenses. Download your .xls file from the bank and upload it here.
           </Typography>
           <ol>
             <li>Create tags (You can put them in series: <small>test1, test2, test3</small> for bulk creating)</li>
@@ -248,7 +271,6 @@ function App() {
             <li>See where you spend your money on the chart</li>
           </ol>
           <Typography variant='caption'>This app doesn't store any information about your transactions or any legal information</Typography>
-
           <Grid container spacing={2}>
             <Grid item xs={8}>
               {renderMerchant()}
