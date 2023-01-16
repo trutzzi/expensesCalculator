@@ -1,0 +1,9 @@
+.nav .isActive {
+    text-decoration: underline;
+}
+
+.nav a {
+    color: white;
+    text-decoration: none;
+    padding: 5px;
+}

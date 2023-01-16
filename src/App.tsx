@@ -1,20 +1,23 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import { read, utils } from 'xlsx';
-import { Box, Container, CssBaseline, Grid, Stack, TextField, Typography } from '@mui/material';
+import { Box, Container, CssBaseline, Grid, Stack, Typography } from '@mui/material';
 
 import Button from '@mui/material/Button';
 import { CSVFormat, GrupedAndProcessed, GrupedByMerchant } from './types';
 import PieComponent from './Pie';
-import FileImport from './components/FileImport';
 import Transactions from './components/Transaction';
 import Header from './Header';
-import DefaultTags from './DefaultTags';
+import DefaultTags from './components/DefaultTags';
+// import FileUpload from './components/UploadRaport';
+import { Route, Routes } from 'react-router-dom';
+import NewTag from './pages/NewTag';
+import { read, utils } from 'xlsx';
+import FileImport from './components/FileImport';
+import Info from './pages/info';
 
 function App() {
   const [dataCsv, setDataCsv] = useState<CSVFormat[]>([]);
   const [grupedData, setGrupedData] = useState<GrupedAndProcessed[]>([])
-  const [newTag, setNewTag] = useState('');
   const [tags, setTags] = useState(DefaultTags);
 
   const [grupedByMerchant, setGrupByMercahng] = useState<GrupedByMerchant>({})
@@ -85,16 +88,8 @@ function App() {
     setGrupByTags(grupByLabesl)
   }, [grupedByMerchant, tags])
 
-  const handleAddTag = () => {
-    if (newTag.trim().length >= 3) {
-      if (tags.find(item => item.name === newTag)) {
-        setTags([...tags, { name: newTag, filters: [] }]);
-      } else {
-        alert('Un TAG cu acelasi nume a fost deja salvat.')
-      }
-    } else {
-      alert('Numele tagului tb sa contina minim 3 litere.')
-    }
+  const handleAddTag = (newTag: { name: string, filters: string[] }) => {
+    setTags([...tags, newTag])
   }
 
   const handleImport = (event: any) => {
@@ -184,7 +179,7 @@ function App() {
   }
 
   const autoTagging = () => {
-    
+
     let newGrupedByTags = [...grupedByTags];
 
     newGrupedByTags.forEach((merchant: any) => {
@@ -205,13 +200,30 @@ function App() {
     setGrupByTags(newGrupedByTags)
   }
 
+
+  // const handleUpload = async (file: any) => {
+  //   // Create a new FormData object to send the file
+  //   const data = new FormData();
+  //   data.append('file', file);
+
+  //   // Send the file to the server
+  //   try {
+  //     const response = await fetch('//localhost:3000/upload', {
+  //       method: 'POST',
+  //       body: data,
+  //     });
+  //     if (response.status === 200) {
+  //       setDataCsv(await response.json())
+  //     }
+  //   } catch (error) {
+  //     alert(error);
+  //   }
+  // };
+
   useEffect(() => {
     grupForCharts()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grupedByTags])
-
-  useEffect(() => {
-  }, [dataCsv])
 
   useEffect(() => {
     setDataForPie({
@@ -242,43 +254,36 @@ function App() {
     })
   }, [dataCompare])
 
-
+  const renderMain = () => (
+    <Grid container spacing={2}>
+      <Grid item xs={12} lg={4} md={4}>
+        {DataForPie && <PieComponent data={DataForPie} />}
+      </Grid>
+      <Grid item xs={12} lg={8} md={8}>
+        {/* <MerchantsTable /> */}
+        {dataCsv.length ? <Button variant='contained' onClick={() => autoTagging()}>Apply filters</Button> : ''}
+        {renderMerchant()}
+      </Grid>
+    </Grid>
+  )
   return (
     <Box sx={{ width: '100%' }}>
       <CssBaseline />
       <Container style={{ marginTop: 100 }} >
         <Stack spacing={2}>
           <Header >
-            <Grid style={{ justifyContent: 'center' }} container spacing={2}>
-              <Grid item xs={8}>
-                <TextField variant='standard' fullWidth placeholder=" You can write multiple tags and  separate them by ',' " onChange={e => setNewTag(e.target.value)} />
-              </Grid>
-              <Grid item xs={2}>
-                <Button fullWidth variant='text' color='inherit' onClick={handleAddTag}>New Tag</Button>
-              </Grid>
-              <Grid item xs={2}>
-                <FileImport onChange={handleImport} />
-              </Grid>
-            </Grid>
+
+            <FileImport onChange={handleImport} />
+            {/* This is v1 beta with nodejs server */}
+            {/* <FileUpload onFileUpload={handleUpload} /> */}
           </Header>
-          {dataCsv.length ? <Button variant='contained' onClick={() => autoTagging()}>Autosort</Button> : ''}
-          <Typography variant='h4'>What is this?</Typography>
-          <Typography variant='body2'>This is a simple p**rogram to process and tag your expenses. Download your .xls file from the bank and upload it here.
-          </Typography>
-          <ol>
-            <li>Create tags (You can put them in series: <small>test1, test2, test3</small> for bulk creating)</li>
-            <li>Attach tags to transactions </li>
-            <li>See where you spend your money on the chart</li>
-          </ol>
-          <Typography variant='caption'>This app doesn't store any information about your transactions or any legal information</Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={8}>
-              {renderMerchant()}
-            </Grid>
-            <Grid item xs={4}>
-              {DataForPie && <PieComponent data={DataForPie} />}
-            </Grid>
-          </Grid>
+
+          <Routes>
+            <Route path="/" element={renderMain()} />
+            <Route path="/filters" element={<NewTag tags={tags} handleAddTag={handleAddTag} />} />
+            <Route path="/info" element={<Info />} />
+          </Routes>
+
         </Stack>
       </Container>
     </Box >
