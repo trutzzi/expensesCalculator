@@ -3,111 +3,27 @@ import './App.css';
 import { Box, Container, CssBaseline, Grid, Stack, Typography } from '@mui/material';
 
 import Button from '@mui/material/Button';
-import { CSVFormat, GrupedAndProcessed, GrupedByMerchant } from './types';
+import { GrupedAndProcessed } from './types';
 import PieComponent from './Pie';
 import Transactions from './components/Transaction';
 import Header from './Header';
 import DefaultTags from './components/DefaultTags';
-// import FileUpload from './components/UploadRaport';
+import FileUpload from './components/UploadRaport';
 import { Route, Routes } from 'react-router-dom';
 import NewTag from './pages/NewTag';
-import { read, utils } from 'xlsx';
-import FileImport from './components/FileImport';
+// import FileImport from './components/FileImport';
 import Info from './pages/info';
 
 function App() {
-  const [dataCsv, setDataCsv] = useState<CSVFormat[]>([]);
-  const [grupedData, setGrupedData] = useState<GrupedAndProcessed[]>([])
   const [tags, setTags] = useState(DefaultTags);
 
-  const [grupedByMerchant, setGrupByMercahng] = useState<GrupedByMerchant>({})
-  const [grupedByTags, setGrupByTags] = useState<any>([])
+  const [grupedByMerchant, setGrupByMercahng] = useState<any>({})
+  const [grupedByTags, setGrupByTags] = useState<any>([]);
   const [dataCompare, setDataCompare] = useState<any>([]);
   const [DataForPie, setDataForPie] = useState<any>(null)
 
-  useEffect(() => {
-
-    let groupedValues: GrupedAndProcessed[] = [];
-
-    for (let i = 0; i < dataCsv.length; i++) {
-      let constructObj = { id: 0, dataCumparare: '', tip: '', valoare: '0', terminal: '' };
-
-      // Check type
-      if (dataCsv[i]?.B && dataCsv[i]?.H && dataCsv[i]?.Q) {
-        constructObj = {
-          id: i,
-          dataCumparare: dataCsv[i].B || '',
-          tip: dataCsv[i].H || '',
-          valoare: dataCsv[i].Q || '',
-          terminal: dataCsv[i + 2].H || ''
-        }
-
-        groupedValues.push(constructObj);
-      }
-      setGrupedData(groupedValues);
-
-    }
-
-  }, [dataCsv]);
-
-  useEffect(() => {
-
-    if (grupedData) {
-      let grupedDataArray: GrupedByMerchant = {};
-      grupedData.forEach((row: GrupedAndProcessed, index: number) => {
-        if (grupedDataArray[row.terminal]) {
-          let newRows = grupedDataArray[row.terminal].rows;
-          grupedDataArray = { ...grupedDataArray, [row.terminal]: { rows: [...newRows, row], id: index, tag: ['General'], total: 0 } }
-        } else {
-          grupedDataArray = { ...grupedDataArray, [row.terminal]: { rows: [row], id: index, tag: ['General'], total: 0 } }
-        }
-
-        //Make total if rows was created and sorted
-        if (grupedDataArray[row.terminal].rows) {
-          let total = grupedDataArray[row.terminal].rows.reduce(
-            (acumulator, currentValue) => {
-              return acumulator + parseFloat(currentValue.valoare);
-            }, 0)
-          grupedDataArray[row.terminal].total = total
-        }
-      })
-      setGrupByMercahng(grupedDataArray)
-    }
-
-  }, [grupedData])
-
-  useEffect(() => {
-    let grupByLabesl: any = [];
-    tags.forEach(tag => {
-      for (let merchant in grupedByMerchant) {
-        if (grupedByMerchant[merchant].tag.indexOf(tag.name) !== -1) {
-          grupByLabesl.push(grupedByMerchant[merchant]);
-        }
-      }
-    })
-    setGrupByTags(grupByLabesl)
-  }, [grupedByMerchant, tags])
-
   const handleAddTag = (newTag: { name: string, filters: string[] }) => {
     setTags([...tags, newTag])
-  }
-
-  const handleImport = (event: any) => {
-    const files = event.target.files;
-    if (files.length) {
-      const file = files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const wb = read(event?.target?.result);
-        const sheets = wb.SheetNames;
-
-        if (sheets.length) {
-          const rows = utils.sheet_to_json(wb.Sheets[sheets[0]], { header: 'A' }) as CSVFormat[];
-          setDataCsv(rows)
-        }
-      }
-      reader.readAsArrayBuffer(file);
-    }
   }
 
   const renderMerchant = () => {
@@ -150,6 +66,7 @@ function App() {
   }
 
   const grupForCharts = () => {
+    //aici
     let grupByTag: {
       tag: string,
       total: number
@@ -197,33 +114,36 @@ function App() {
         }
       })
     })
+    setGrupByMercahng(newGrupedByTags);
     setGrupByTags(newGrupedByTags)
   }
 
 
-  // const handleUpload = async (file: any) => {
-  //   // Create a new FormData object to send the file
-  //   const data = new FormData();
-  //   data.append('file', file);
-
-  //   // Send the file to the server
-  //   try {
-  //     const response = await fetch('//localhost:3000/upload', {
-  //       method: 'POST',
-  //       body: data,
-  //     });
-  //     if (response.status === 200) {
-  //       setDataCsv(await response.json())
-  //     }
-  //   } catch (error) {
-  //     alert(error);
-  //   }
-  // };
+  const handleUpload = async (file: any) => {
+    // Create a new FormData object to send the file
+    const data = new FormData();
+    data.append('file', file);
+    data.append('tags', JSON.stringify(tags))
+    // Send the file to the server
+    try {
+      const response = await fetch('//localhost:3000/upload', {
+        method: 'POST',
+        body: data,
+      });
+      if (response.status === 200) {
+        const responseData = await response.json();
+        setGrupByTags(responseData.grupByLabels)
+        setGrupByMercahng(responseData.grupByMerchant)
+      }
+    } catch (error) {
+      alert(error);
+    }
+  };
 
   useEffect(() => {
     grupForCharts()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [grupedByTags])
+  }, [grupedByMerchant])
 
   useEffect(() => {
     setDataForPie({
@@ -261,7 +181,7 @@ function App() {
       </Grid>
       <Grid item xs={12} lg={8} md={8}>
         {/* <MerchantsTable /> */}
-        {dataCsv.length ? <Button variant='contained' onClick={() => autoTagging()}>Apply filters</Button> : ''}
+        {setGrupByMercahng.length ? <Button variant='contained' onClick={() => autoTagging()}>Apply filters</Button> : ''}
         {renderMerchant()}
       </Grid>
     </Grid>
@@ -272,10 +192,7 @@ function App() {
       <Container style={{ marginTop: 100 }} >
         <Stack spacing={2}>
           <Header >
-
-            <FileImport onChange={handleImport} />
-            {/* This is v1 beta with nodejs server */}
-            {/* <FileUpload onFileUpload={handleUpload} /> */}
+            <FileUpload onFileUpload={handleUpload} />
           </Header>
 
           <Routes>
