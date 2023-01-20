@@ -4,15 +4,15 @@ const DefaulTags = [{
 },
 {
     name: 'Restaurants',
-    filters: ['urban', 'iraqy']
+    filters: ['urban', 'iraqy', 'papao ro', 'premier restaurants roman', 'la brisetto', 'kfc', 'dabo doner', 'burger king']
 },
 {
     name: 'Transport',
-    filters: ['omv', 'rompetrol', 'lukoil']
+    filters: ['omv', 'rompetrol', 'lukoil', 'bolt', 'glovo']
 },
 {
     name: 'Travel',
-    filters: ['bolt']
+    filters: []
 },
 {
     name: 'Entertainment',
@@ -20,23 +20,27 @@ const DefaulTags = [{
 },
 {
     name: 'Utilities',
-    filters: []
+    filters: ['dr teo']
 },
 {
     name: 'Health',
-    filters: []
+    filters: ['help net']
 },
 {
     name: 'Services',
-    filters: ['vodafone', 'adobe photogphy']
+    filters: ['vodafone', 'adobe photogphy', 'netflix', 'youtubepremium']
 },
 {
     name: 'Transfer',
-    filters: ['Revolut']
+    filters: ['revolut', 'In contul:']
 },
 {
     name: 'General',
     filters: []
+},
+{
+    name: 'Groceries',
+    filters: ['praxis', 'prima market', 'carrefour', 'anemali shop', 'lidl', 'auchan', 'anemeli shop']
 },
 {
     name: 'Saving',
@@ -56,7 +60,7 @@ const DefaulTags = [{
 },
 {
     name: 'Gift',
-    filters: []
+    filters: ['jewelry']
 },
 {
     name: 'Donation',

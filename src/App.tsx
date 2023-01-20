@@ -1,21 +1,20 @@
 import { createContext, useEffect, useMemo, useState } from 'react';
 import './App.css';
-import { Box, Container, createTheme, CssBaseline, Grid, IconButton, Stack, ThemeProvider, Typography } from '@mui/material';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { Box, Container, CssBaseline, Grid, Stack, ThemeProvider, Typography } from '@mui/material';
+
 import Button from '@mui/material/Button';
-import { CSVFormat, GrupedAndProcessed, GrupedByMerchant } from './types';
-import PieComponent from './Pie';
+import { CSVFormat, GrupedAndProcessed, GrupedByMerchant, PieData } from './types';
+import PieComponent from './components/Pie';
 import Transactions from './components/Transaction';
-import Header from './Header';
-import DefaultTags from './components/DefaultTags';
+import Header from './components/Header';
+import DefaultTags from './DefaultTags';
 // import FileUpload from './components/UploadRaport';
 import { Route, Routes } from 'react-router-dom';
 import NewTag from './pages/NewTag';
 import { read, utils } from 'xlsx';
 import FileImport from './components/FileImport';
 import Info from './pages/info';
-import { amber, grey, lime } from '@mui/material/colors';
+import { CreateTheme, SwitchTheme } from './Theme';
 const ColorModeContext = createContext({ toggleColorMode: () => { } });
 
 function App() {
@@ -26,58 +25,18 @@ function App() {
   const [grupedByMerchant, setGrupByMercahng] = useState<GrupedByMerchant>({})
   const [grupedByTags, setGrupByTags] = useState<any>([])
   const [dataCompare, setDataCompare] = useState<any>([]);
-  const [DataForPie, setDataForPie] = useState<any>(null)
   const [mode, setMode] = useState<'light' | 'dark'>('light');
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
         setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
-      },
+      }
     }),
     [],
   );
   const theme = useMemo(
     () =>
-      createTheme({
-        palette: {
-          mode,
-          primary: {
-            ...lime,
-            ...(mode === 'dark' ? {
-              main: lime[300],
-            } :
-              {
-                main: lime[500],
-              }),
-          },
-          secondary: {
-            ...lime,
-            ...(mode === 'dark' ? {
-              main: grey[300],
-            } :
-              {
-                main: grey[900],
-              }),
-          },
-          ...(mode === 'dark' && {
-            background: {
-              default: grey[900],
-              paper: grey[900],
-            },
-          }),
-          text: {
-            ...(mode === 'light'
-              ? {
-                primary: grey[900],
-                secondary: grey[800],
-              }
-              : {
-                primary: '#fff',
-                secondary: grey[500],
-              }),
-          },
-        },
-      }),
+      CreateTheme(mode),
     [mode],
   );
 
@@ -207,10 +166,7 @@ function App() {
   }
 
   const grupForCharts = () => {
-    let grupByTag: {
-      tag: string,
-      total: number
-    }[] = [];
+    let grupByTag: PieData[] = [];
 
     tags.forEach(({ name }) => {
       grupByTag.push({
@@ -282,39 +238,10 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grupedByTags])
 
-  useEffect(() => {
-    setDataForPie({
-      labels: dataCompare.map((item: any) => item.tag),
-      datasets: [
-        {
-          label: 'RON',
-          data: dataCompare.map((item: any) => item.total),
-          backgroundColor: [
-            'rgba(255, 99, 132, 0.2)',
-            'rgba(54, 162, 235, 0.2)',
-            'rgba(255, 206, 86, 0.2)',
-            'rgba(75, 192, 192, 0.2)',
-            'rgba(153, 102, 255, 0.2)',
-            'rgba(255, 159, 64, 0.2)',
-          ],
-          borderColor: [
-            'rgba(255, 99, 132, 1)',
-            'rgba(54, 162, 235, 1)',
-            'rgba(255, 206, 86, 1)',
-            'rgba(75, 192, 192, 1)',
-            'rgba(153, 102, 255, 1)',
-            'rgba(255, 159, 64, 1)',
-          ],
-          borderWidth: 1,
-        },
-      ],
-    })
-  }, [dataCompare])
-
   const renderMain = () => (
     <Grid container spacing={2}>
       <Grid item xs={12} lg={4} md={4}>
-        {DataForPie && <PieComponent data={DataForPie} />}
+        {dataCompare && <PieComponent dataCompare={dataCompare} />}
       </Grid>
       <Grid item xs={12} lg={8} md={8}>
         {/* <MerchantsTable /> */}
@@ -332,9 +259,7 @@ function App() {
             <Stack spacing={2}>
               <Header >
                 <FileImport onChange={handleImport} />
-                <IconButton sx={{ ml: 1 }} onClick={colorMode.toggleColorMode} color="inherit">
-                  {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-                </IconButton>
+                <SwitchTheme currentMode={theme.palette.mode} onThemeChange={colorMode.toggleColorMode} />
                 {/* This is v1 beta with nodejs server */}
                 {/* <FileUpload onFileUpload={handleUpload} /> */}
               </Header>
