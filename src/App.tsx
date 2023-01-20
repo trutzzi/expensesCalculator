@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { createContext, useEffect, useMemo, useState } from 'react';
 import './App.css';
-import { Box, Container, CssBaseline, Grid, Stack, Typography } from '@mui/material';
-
+import { Box, Container, createTheme, CssBaseline, Grid, IconButton, PaletteMode, Stack, ThemeProvider, Typography, useTheme } from '@mui/material';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 import Button from '@mui/material/Button';
 import { CSVFormat, GrupedAndProcessed, GrupedByMerchant } from './types';
 import PieComponent from './Pie';
@@ -14,6 +15,8 @@ import NewTag from './pages/NewTag';
 import { read, utils } from 'xlsx';
 import FileImport from './components/FileImport';
 import Info from './pages/info';
+import { amber, deepOrange, grey, lime } from '@mui/material/colors';
+const ColorModeContext = createContext({ toggleColorMode: () => { } });
 
 function App() {
   const [dataCsv, setDataCsv] = useState<CSVFormat[]>([]);
@@ -24,6 +27,51 @@ function App() {
   const [grupedByTags, setGrupByTags] = useState<any>([])
   const [dataCompare, setDataCompare] = useState<any>([]);
   const [DataForPie, setDataForPie] = useState<any>(null)
+  const [mode, setMode] = useState<'light' | 'dark'>('light');
+  const colorMode = useMemo(
+    () => ({
+      toggleColorMode: () => {
+        setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
+      },
+    }),
+    [],
+  );
+  const theme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode,
+          primary: {
+            ...amber,
+            ...(mode === 'dark' ? {
+              main: lime[300],
+            } :
+              {
+                main: lime[500],
+              }),
+          },
+          ...(mode === 'dark' && {
+            background: {
+              default: grey[900],
+              paper: grey[900],
+            },
+          }),
+          text: {
+            ...(mode === 'light'
+              ? {
+                primary: grey[900],
+                secondary: grey[800],
+              }
+              : {
+                primary: '#fff',
+                secondary: grey[500],
+              }),
+          },
+        },
+      }),
+    [mode],
+  );
+
 
   useEffect(() => {
 
@@ -267,26 +315,32 @@ function App() {
     </Grid>
   )
   return (
-    <Box sx={{ width: '100%' }}>
-      <CssBaseline />
-      <Container style={{ marginTop: 100 }} >
-        <Stack spacing={2}>
-          <Header >
+    <ColorModeContext.Provider value={colorMode}>
+      <ThemeProvider theme={theme}>
+        <Box sx={{ width: '100%' }}>
+          <CssBaseline />
+          <Container style={{ marginTop: 100 }} >
+            <Stack spacing={2}>
+              <Header >
+                <IconButton sx={{ ml: 1 }} onClick={colorMode.toggleColorMode} color="inherit">
+                  {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+                </IconButton>
+                <FileImport onChange={handleImport} />
+                {/* This is v1 beta with nodejs server */}
+                {/* <FileUpload onFileUpload={handleUpload} /> */}
+              </Header>
 
-            <FileImport onChange={handleImport} />
-            {/* This is v1 beta with nodejs server */}
-            {/* <FileUpload onFileUpload={handleUpload} /> */}
-          </Header>
+              <Routes>
+                <Route path="/" element={renderMain()} />
+                <Route path="/filters" element={<NewTag tags={tags} handleAddTag={handleAddTag} />} />
+                <Route path="/info" element={<Info />} />
+              </Routes>
 
-          <Routes>
-            <Route path="/" element={renderMain()} />
-            <Route path="/filters" element={<NewTag tags={tags} handleAddTag={handleAddTag} />} />
-            <Route path="/info" element={<Info />} />
-          </Routes>
-
-        </Stack>
-      </Container>
-    </Box >
+            </Stack>
+          </Container>
+        </Box >
+      </ThemeProvider>
+    </ColorModeContext.Provider>
   );
 }
 
