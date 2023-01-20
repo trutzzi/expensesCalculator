@@ -1,6 +1,6 @@
 import { createContext, useEffect, useMemo, useState } from 'react';
 import './App.css';
-import { Box, Container, createTheme, CssBaseline, Grid, IconButton, PaletteMode, Stack, ThemeProvider, Typography, useTheme } from '@mui/material';
+import { Box, Container, createTheme, CssBaseline, Grid, IconButton, Stack, ThemeProvider, Typography } from '@mui/material';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import Button from '@mui/material/Button';
@@ -15,7 +15,7 @@ import NewTag from './pages/NewTag';
 import { read, utils } from 'xlsx';
 import FileImport from './components/FileImport';
 import Info from './pages/info';
-import { amber, deepOrange, grey, lime } from '@mui/material/colors';
+import { amber, grey, lime } from '@mui/material/colors';
 const ColorModeContext = createContext({ toggleColorMode: () => { } });
 
 function App() {
@@ -42,12 +42,21 @@ function App() {
         palette: {
           mode,
           primary: {
-            ...amber,
+            ...lime,
             ...(mode === 'dark' ? {
               main: lime[300],
             } :
               {
                 main: lime[500],
+              }),
+          },
+          secondary: {
+            ...lime,
+            ...(mode === 'dark' ? {
+              main: grey[300],
+            } :
+              {
+                main: grey[900],
               }),
           },
           ...(mode === 'dark' && {
@@ -322,20 +331,18 @@ function App() {
           <Container style={{ marginTop: 100 }} >
             <Stack spacing={2}>
               <Header >
+                <FileImport onChange={handleImport} />
                 <IconButton sx={{ ml: 1 }} onClick={colorMode.toggleColorMode} color="inherit">
                   {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
                 </IconButton>
-                <FileImport onChange={handleImport} />
                 {/* This is v1 beta with nodejs server */}
                 {/* <FileUpload onFileUpload={handleUpload} /> */}
               </Header>
-
               <Routes>
                 <Route path="/" element={renderMain()} />
                 <Route path="/filters" element={<NewTag tags={tags} handleAddTag={handleAddTag} />} />
                 <Route path="/info" element={<Info />} />
               </Routes>
-
             </Stack>
           </Container>
         </Box >
