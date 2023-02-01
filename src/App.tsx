@@ -1,11 +1,8 @@
 import { createContext, useEffect, useMemo, useState } from 'react';
 import './App.css';
-import { Box, Container, CssBaseline, Grid, Stack, ThemeProvider, Typography } from '@mui/material';
+import { Box, Container, CssBaseline, Stack, ThemeProvider } from '@mui/material';
 
-import Button from '@mui/material/Button';
 import { CSVFormat, GrupedAndProcessed, GrupedByMerchant, PieData } from './types';
-import PieComponent from './components/Pie';
-import Transactions from './components/Transaction';
 import Header from './components/Header';
 import DefaultTags from './DefaultTags';
 // import FileUpload from './components/UploadRaport';
@@ -15,6 +12,9 @@ import { read, utils } from 'xlsx';
 import FileImport from './components/FileImport';
 import Info from './pages/info';
 import { CreateTheme, SwitchTheme } from './Theme';
+import ErrorBoundary from './components/ErrorBoundary';
+import { routes } from './routes';
+import Index from './pages/Index';
 const ColorModeContext = createContext({ toggleColorMode: () => { } });
 
 function App() {
@@ -25,12 +25,15 @@ function App() {
   const [grupedByMerchant, setGrupByMercahng] = useState<GrupedByMerchant>({})
   const [grupedByTags, setGrupByTags] = useState<any>([])
   const [dataCompare, setDataCompare] = useState<any>([]);
-  const [mode, setMode] = useState<'light' | 'dark'>('light');
+  const [mode, setMode] = useState(localStorage.getItem('theme') as 'dark' | 'light' ?? 'light');
   const colorMode = useMemo(
     () => ({
-      toggleColorMode: () => {
-        setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
-      }
+      toggleColorMode: () =>
+        setMode((prevMode) => {
+          const mode = prevMode === 'light' ? 'dark' : 'light';
+          localStorage.setItem('theme', mode)
+          return mode
+        })
     }),
     [],
   );
@@ -126,30 +129,6 @@ function App() {
     }
   }
 
-  const renderMerchant = () => {
-    let renderTransactions = [];
-    let totalExpenses = 0;
-    for (let merchant in grupedByMerchant) {
-      // eslint-disable-next-line no-loop-func
-      grupedByMerchant[merchant].rows.forEach((item: GrupedAndProcessed) => {
-        totalExpenses = totalExpenses += parseFloat(item.valoare)
-      });
-
-      let propsData = {
-        id: grupedByMerchant[merchant].id,
-        title: grupedByMerchant[merchant].rows[0].terminal.replace('Terminal: ', ''),
-        total: grupedByMerchant[merchant].total || 0,
-        transactions: grupedByMerchant[merchant].rows.length
-      }
-
-      renderTransactions.push(<Transactions tags={tags} merchant={grupedByMerchant[merchant]} data={propsData} handleAddTagToMerchant={handleAddTagToMerchant} />)
-    }
-    return <>
-      {Object.keys(grupedByMerchant).length > 0 && <Typography variant='h5'>Expenses <span style={{ color: 'green' }}>{totalExpenses}</span> RON</Typography>}
-      {renderTransactions}
-    </>
-  };
-
   const handleAddTagToMerchant = (id: number, tag: string) => {
     for (let merchant in grupedByMerchant) {
       let copyOfMerchantGroup = { ...grupedByMerchant }
@@ -238,41 +217,31 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grupedByTags])
 
-  const renderMain = () => (
-    <Grid container spacing={2}>
-      <Grid item xs={12} lg={4} md={4}>
-        {dataCompare && <PieComponent dataCompare={dataCompare} />}
-      </Grid>
-      <Grid item xs={12} lg={8} md={8}>
-        {/* <MerchantsTable /> */}
-        {dataCsv.length ? <Button variant='contained' onClick={() => autoTagging()}>Apply filters</Button> : ''}
-        {renderMerchant()}
-      </Grid>
-    </Grid>
-  )
   return (
-    <ColorModeContext.Provider value={colorMode}>
-      <ThemeProvider theme={theme}>
-        <Box sx={{ width: '100%' }}>
-          <CssBaseline />
-          <Container style={{ marginTop: 100 }} >
-            <Stack spacing={2}>
-              <Header >
-                <FileImport onChange={handleImport} />
-                <SwitchTheme currentMode={theme.palette.mode} onThemeChange={colorMode.toggleColorMode} />
-                {/* This is v1 beta with nodejs server */}
-                {/* <FileUpload onFileUpload={handleUpload} /> */}
-              </Header>
-              <Routes>
-                <Route path="/" element={renderMain()} />
-                <Route path="/filters" element={<NewTag tags={tags} handleAddTag={handleAddTag} />} />
-                <Route path="/info" element={<Info />} />
-              </Routes>
-            </Stack>
-          </Container>
-        </Box >
-      </ThemeProvider>
-    </ColorModeContext.Provider>
+    <ErrorBoundary>
+      <ColorModeContext.Provider value={colorMode}>
+        <ThemeProvider theme={theme}>
+          <Box sx={{ width: '100%' }}>
+            <CssBaseline />
+            <Container style={{ marginTop: 100 }} >
+              <Stack spacing={2}>
+                <Header >
+                  <FileImport onChange={handleImport} />
+                  <SwitchTheme currentMode={theme.palette.mode} onThemeChange={colorMode.toggleColorMode} />
+                  {/* This is v1 beta with nodejs server */}
+                  {/* <FileUpload onFileUpload={handleUpload} /> */}
+                </Header>
+                <Routes>
+                  <Route path={routes.index} element={<Index grupedByMerchant={grupedByMerchant} tags={tags} dataCompare={dataCompare} autoTagging={autoTagging} handleAddTagToMerchant={handleAddTagToMerchant} />} />
+                  <Route path={routes.filters} element={<NewTag tags={tags} handleAddTag={handleAddTag} />} />
+                  <Route path={routes.info} element={<Info />} />
+                </Routes>
+              </Stack>
+            </Container>
+          </Box >
+        </ThemeProvider>
+      </ColorModeContext.Provider>
+    </ErrorBoundary>
   );
 }
 

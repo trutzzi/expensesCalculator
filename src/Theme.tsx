@@ -2,47 +2,32 @@ import { createTheme, IconButton } from "@mui/material";
 import { lime, grey } from "@mui/material/colors";
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { ThemeOptions } from '@mui/material/styles';
 
+export const themeOptions: ThemeOptions = {
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#3f51b5',
+    },
+    secondary: {
+      main: '#f50057',
+    },
+  },
+};
 const CreateTheme = (mode: 'light' | 'dark') =>
   createTheme({
     palette: {
       mode,
       primary: {
-        ...lime,
-        ...(mode === "dark"
-          ? {
-            main: lime[300],
-          }
-          : {
-            main: lime[500],
-          }),
+        main: lime[500]
       },
       secondary: {
-        ...lime,
-        ...(mode === "dark"
-          ? {
-            main: grey[300],
-          }
-          : {
-            main: grey[900],
-          }),
+        main: mode === "dark" ? grey[300] : grey[900],
       },
-      ...(mode === "dark" && {
-        background: {
-          default: grey[900],
-          paper: grey[900],
-        },
-      }),
       text: {
-        ...(mode === "light"
-          ? {
-            primary: grey[900],
-            secondary: grey[800],
-          }
-          : {
-            primary: "#fff",
-            secondary: grey[500],
-          }),
+        primary: mode === "light" ? grey[900] : grey[300],
+        secondary: mode === "light" ? grey[800] : grey[500]
       },
     },
   });
